@@ -6,18 +6,28 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 
-data class TopBarConfig(
+@OptIn(ExperimentalMaterial3Api::class)
+data class TopBarConfig (
     var title: TopBarTitle? = null,
+    var type: TopBarType = TopBarType.Small,
     var navIconButton: TopBarIconButton? = null,
-    var actions: TopBarActions? = null
+    var actions: TopBarActions? = null,
+    var scrollBehavior: (@Composable () -> TopAppBarScrollBehavior)? = null
 )
+
+enum class TopBarType {
+    Small,
+    Large
+}
 
 sealed interface TopBarTitle {
     class Text(val title: String): TopBarTitle
@@ -45,13 +55,27 @@ sealed interface TopBarActions {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RecipeTopAppBar(topBarConfig: TopBarConfig?) {
+fun RecipeTopAppBar(
+    topBarConfig: TopBarConfig?,
+    scrollBehavior: TopAppBarScrollBehavior?
+) {
     if (topBarConfig != null) {
-        TopAppBar(
-            title = { TopBarTitle(topBarConfig.title) },
-            navigationIcon = { TopBarIconButton(topBarConfig.navIconButton) },
-            actions = { TopBarActions(topBarConfig.actions) }
-        )
+        when (topBarConfig.type) {
+            TopBarType.Small ->
+                TopAppBar(
+                    title = { TopBarTitle(topBarConfig.title) },
+                    navigationIcon = { TopBarIconButton(topBarConfig.navIconButton) },
+                    actions = { TopBarActions(topBarConfig.actions) },
+                    scrollBehavior = scrollBehavior
+                )
+            TopBarType.Large ->
+                LargeTopAppBar(
+                    title = { TopBarTitle(topBarConfig.title) },
+                    navigationIcon = { TopBarIconButton(topBarConfig.navIconButton) },
+                    actions = { TopBarActions(topBarConfig.actions)},
+                    scrollBehavior = scrollBehavior
+                )
+        }
     }
 }
 

@@ -1,6 +1,11 @@
 <resources>
     <string name="app_name">Recetas</string>
 
+    <!-- List Screen -->
     <string name="listScreen_title">Recetas</string>
+
+    <!-- Details Screen -->
+    <string name="detailsScreen_ingredients">Ingredientes</string>
+    <string name="detailsScreen_cookingSteps">Pasos de preparación</string>
 
 </resources>
