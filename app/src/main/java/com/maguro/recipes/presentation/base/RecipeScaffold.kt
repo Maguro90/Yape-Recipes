@@ -12,7 +12,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import com.maguro.recipes.presentation.details.DetailsScreen
+import com.maguro.recipes.presentation.map.MapScreen
 
 private var scaffoldConfig by mutableStateOf(ScaffoldConfig())
 
@@ -54,8 +54,7 @@ fun RecipeScaffold() {
             Box(
                 modifier = Modifier.padding(paddingValues)
             ) {
-                DetailsScreen(
-                    onLocationClick = {},
+                MapScreen(
                     onBackClick = {}
                 )
             }

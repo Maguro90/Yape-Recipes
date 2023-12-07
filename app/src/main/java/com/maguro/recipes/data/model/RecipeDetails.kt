@@ -4,6 +4,7 @@ data class RecipeDetails(
     val id: Long,
     val name: String,
     val imageUrl: String,
+    val origin: Origin,
     val description: String,
     val ingredients: List<String>,
     val cookingSteps: List<String>
@@ -14,6 +15,30 @@ data class RecipeDetails(
             name = "Aguachile de camarón",
             imageUrl = "https://cdn7.kiwilimon.com/recetaimagen/28638/28924.jpg",
             description = "Estos días de calor prepara un delicioso, fresco y picosito aguachile de camarón que va acompañado con tostadas de maíz y decorado con cebollita morada, y chile serrano. Además de su intenso sabor lleva una combinación de salsa inglesa y jugo de limón. ¡Te encantará!",
+            origin = Origin (
+                region = Region(
+                    name = "Sinaloa",
+                    coordinates = Coordinates(
+                        latitude = 25.0,
+                        longitude = -107.5,
+                    )
+                ),
+                country = Country(
+                    code = "MX",
+                    coordinates = Coordinates(
+                        latitude = 23.6260333,
+                        longitude = -102.5375005
+                    ),
+                    northWest = Coordinates(
+                        latitude = 14.5388286402,
+                        longitude = -117.12776,
+                    ),
+                    southEast = Coordinates(
+                        latitude = 32.72083,
+                        longitude = -86.811982388
+                    )
+                )
+            ),
             ingredients = listOf(
                 "1 kilo de camarón mediano, sin cáscara, limpios y en corte mariposa",
                 "1 taza de jugo de limón colado",
