@@ -1,4 +1,4 @@
-package com.maguro.recipes.presentation.details
+package com.maguro.recipes.presentation.screens.details
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.maguro.recipes.R
 import com.maguro.recipes.data.model.RecipeDetails
@@ -40,7 +41,8 @@ import com.maguro.recipes.presentation.base.UpdateScaffold
 @Composable
 fun DetailsScreen(
     onLocationClick: (Long) -> Unit,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    viewModel: DetailsViewModel = hiltViewModel()
 ) {
     val recipe = RecipeDetails.sample
 

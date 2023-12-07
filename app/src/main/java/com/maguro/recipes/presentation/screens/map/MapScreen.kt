@@ -1,4 +1,4 @@
-package com.maguro.recipes.presentation.map
+package com.maguro.recipes.presentation.screens.map
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.maguro.recipes.data.model.Coordinates
 import com.maguro.recipes.data.model.Country
 import com.maguro.recipes.data.model.Origin
@@ -32,7 +33,8 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MapScreen(
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    viewModel: MapViewModel = hiltViewModel()
 ) {
     val recipe = RecipeDetails.sample
 

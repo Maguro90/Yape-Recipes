@@ -1,4 +1,4 @@
-package com.maguro.recipes.presentation.list
+package com.maguro.recipes.presentation.screens.list
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
-import androidx.compose.material.icons.outlined.KeyboardArrowRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
