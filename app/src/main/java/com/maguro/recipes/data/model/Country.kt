@@ -1,8 +1,8 @@
 package com.maguro.recipes.data.model
 
 data class Country (
+    val name: String,
     val code: String,
-    val coordinates: Coordinates,
-    val northWest: Coordinates,
-    val southEast: Coordinates,
+    val location: Coordinates,
+    val boundingBox: BoundingBox
 )

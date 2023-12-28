@@ -31,19 +31,23 @@ open class RouteWithId protected constructor(
 
     private val idArg =
         navArgument(Args.ID.value) {
-            type = NavType.LongType
+            type = NavType.StringType
             nullable = false
         }
 
     override val arguments: List<NamedNavArgument> =
         additionalArgs + idArg
 
-    fun withId(id: Long): String {
+    fun withId(id: String): String {
         return path
-            .replace("{${Args.ID.value}}", id.toString())
+            .replace("{${Args.ID.value}}", id)
     }
 
     private enum class Args(val value: String) {
-        ID("id"),
+        ID(RouteWithId.ID),
+    }
+
+    companion object {
+        const val ID = "id"
     }
 }

@@ -1,26 +1,32 @@
 package com.maguro.recipes.presentation.screens.map
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.maguro.recipes.data.model.Coordinates
 import com.maguro.recipes.data.model.Country
-import com.maguro.recipes.data.model.Origin
-import com.maguro.recipes.data.model.RecipeDetails
+import com.maguro.recipes.data.model.Recipe
+import com.maguro.recipes.data.repository.RequestResult
 import com.maguro.recipes.presentation.base.TopBarConfig
 import com.maguro.recipes.presentation.base.TopBarIconButton
 import com.maguro.recipes.presentation.base.TopBarTitle
 import com.maguro.recipes.presentation.base.TopBarType
 import com.maguro.recipes.presentation.base.UpdateScaffold
+import com.maguro.recipes.presentation.screens.utils.PullToRefreshBox
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.BoundingBox
@@ -36,8 +42,64 @@ fun MapScreen(
     onBackClick: () -> Unit,
     viewModel: MapViewModel = hiltViewModel()
 ) {
-    val recipe = RecipeDetails.sample
 
+    val pullToRefreshState = rememberPullToRefreshState()
+
+    PullToRefreshBox(
+        modifier = Modifier.fillMaxSize(),
+        state = pullToRefreshState,
+        onRefresh = { viewModel.reload() }
+    ) {
+        val state = viewModel.recipe.collectAsStateWithLifecycle()
+
+        when (val result = state.value) {
+            is RequestResult.FirstLoad -> {
+                Loading(onBackClick = onBackClick)
+            }
+            is RequestResult.Refresh -> {
+                //Show nothing
+            }
+            is RequestResult.Success -> {
+                pullToRefreshState.endRefresh()
+                when (val recipe = result.data) {
+                    null -> {}
+                    else -> MapContent(
+                        recipe = recipe,
+                        onBackClick = onBackClick
+                    )
+                }
+            }
+            is RequestResult.Error -> {}
+        }
+    }
+
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun Loading(
+    onBackClick: () -> Unit
+) {
+    UpdateScaffold(tag = "MapScreen") {
+        topBar = TopBarConfig(
+            title = TopBarTitle.Empty,
+            navIconButton = TopBarIconButton.Vector(
+                icon = Icons.AutoMirrored.Filled.ArrowBack,
+                onClick = onBackClick
+            )
+        )
+    }
+    LinearProgressIndicator(
+        modifier = Modifier.fillMaxWidth()
+    )
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun MapContent(
+    recipe: Recipe,
+    onBackClick: () -> Unit
+) {
     UpdateScaffold(tag = "MapScreen") {
         topBar = TopBarConfig(
             title = TopBarTitle.Text(recipe.name),
@@ -53,12 +115,12 @@ fun MapScreen(
     Box(
         modifier = Modifier.clip(RoundedCornerShape(8.dp))
     ) {
-        MapView(origin = recipe.origin)
+        MapView(country = recipe.country)
     }
 }
 
 @Composable
-private fun MapView(origin: Origin) {
+private fun MapView(country: Country) {
     AndroidView(
         factory = { context ->
             Configuration.getInstance().apply {
@@ -71,24 +133,18 @@ private fun MapView(origin: Origin) {
                 setTileSource(TileSourceFactory.MAPNIK)
                 zoomController.setVisibility(CustomZoomButtonsController.Visibility.NEVER)
                 addOnFirstLayoutListener { _, _, _, _, _ ->
-                    zoomToRegion(origin)
+                    zoomToCountry(country)
                 }
             }
         }
     )
 }
 
-private fun MapView.zoomToRegion(origin: Origin) {
-    setRegionMarker(origin.fullRegionName, origin.coordinates)
-    if (origin.isRegionOutsideOfMainland) {
-        controller.apply {
-            animateTo(origin.coordinates.geoPoint, 7.0, 3L)
-        }
-    } else {
-        zoomToBoundingBox(
-            origin.country.boundingBox, true,100
-        )
-    }
+private fun MapView.zoomToCountry(country: Country) {
+    setRegionMarker(country.localizedName, country.location)
+    zoomToBoundingBox(
+        country.implBoundingBox, true,100
+    )
 }
 
 private fun MapView.setRegionMarker(fullRegionName: String, coordinates: Coordinates) {
@@ -105,39 +161,13 @@ private fun MapView.setRegionMarker(fullRegionName: String, coordinates: Coordin
 private val Coordinates.geoPoint: GeoPoint
     get() = GeoPoint(latitude, longitude)
 
-private val Country.boundingBox: BoundingBox
+private val Country.implBoundingBox: BoundingBox
     get() = BoundingBox(
-        northWest.latitude,
-        southEast.longitude,
-        southEast.latitude,
-        northWest.longitude
+        boundingBox.northWest.latitude,
+        boundingBox.southEast.longitude,
+        boundingBox.southEast.latitude,
+        boundingBox.northWest.longitude
     )
 
-private val Origin.fullRegionName: String
-    get() {
-        val regionPart = if (region != null) {
-            "${region.name}, "
-        } else {
-            ""
-        }
-        return "$regionPart ${country.countryName}"
-    }
-
-private val Country.countryName: String
+private val Country.localizedName: String
     get() = Locale("", code).getDisplayCountry(Locale.getDefault())
-
-private val Origin.coordinates: Coordinates
-    get() = region?.coordinates ?: country.coordinates
-
-private val Origin.isRegionOutsideOfMainland: Boolean
-    get() {
-        if (region == null)
-            return false
-
-        return listOf(
-            region.coordinates.latitude < country.northWest.latitude,
-            region.coordinates.longitude < country.northWest.longitude,
-            (region.coordinates.latitude > country.southEast.latitude),
-            (region.coordinates.longitude > country.southEast.longitude),
-        ).any { it }
-    }

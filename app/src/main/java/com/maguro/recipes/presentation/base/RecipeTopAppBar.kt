@@ -30,6 +30,7 @@ enum class TopBarType {
 }
 
 sealed interface TopBarTitle {
+    object Empty: TopBarTitle
     class Text(val title: String): TopBarTitle
     class StringResource(@StringRes val id: Int): TopBarTitle
     class Custom(val block: @Composable () -> Unit) : TopBarTitle
@@ -82,6 +83,7 @@ fun RecipeTopAppBar(
 @Composable
 private fun TopBarTitle(title: TopBarTitle?) {
     when (title) {
+        is TopBarTitle.Empty -> {}
         is TopBarTitle.Text -> Text(title.title)
         is TopBarTitle.StringResource -> Text(stringResource(title.id))
         is TopBarTitle.Custom -> title.block()
