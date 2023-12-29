@@ -1,6 +1,5 @@
 package com.maguro.recipes.data.repository
 
-import android.util.Log
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
@@ -42,30 +41,25 @@ fun <T> Flow<Signal>.asResultRequestFlow(
 ): Flow<RequestResult<T>> =
     flatMapLatest { signal ->
         flow {
-            var error: ErrorType = ErrorType.None
-            when (signal) {
-                is Signal.InitialLoad -> {
-                    val localData = localFetcher()
-                    if (!localDataValidator(localData)) {
-                        emit(RequestResult.FirstLoad)
-                        error = convertError {
-                            localSaver(remoteFetcher())
-                        }
-                    }
+            val localData = localFetcher()
+
+            if (signal is Signal.InitialLoad) {
+                if (localDataValidator(localData)) {
+                    emit(RequestResult.WithData.Loaded(localData, ErrorType.None))
+                    return@flow
                 }
-                else -> {
-                    emit(
-                        RequestResult.WithData.Refresh(
-                            localFetcher(),
-                            ErrorType.None
-                        )
+                emit(RequestResult.FirstLoad)
+            } else {
+                emit(
+                    RequestResult.WithData.Refresh(
+                        localData,
+                        ErrorType.None
                     )
-                    error = convertError {
-                        localSaver(remoteFetcher())
-                    }
-                }
+                )
             }
-            Log.e("Data", "${localFetcher()}")
+
+            val error = convertError { localSaver(remoteFetcher()) }
+
             emit(RequestResult.WithData.Loaded(localFetcher(), error))
         }
         .flowOn(ioDispatcher)

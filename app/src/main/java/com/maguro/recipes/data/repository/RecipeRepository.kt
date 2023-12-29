@@ -1,16 +1,12 @@
 package com.maguro.recipes.data.repository
 
-import android.util.Log
 import com.maguro.recipes.data.local.dao.RecipesDao
 import com.maguro.recipes.data.model.Recipe
 import com.maguro.recipes.data.remote.RecipesApi
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onSubscription
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -55,16 +51,6 @@ class RecipeRepositoryImpl (
                 emit(Signal.InitialLoad)
             }
 
-    init {
-        signalingFlow.subscriptionCount
-            .onEach {
-                Log.e("SignalFlow", "$it")
-            }
-            .launchIn(MainScope())
-    }
-
-
-
     override val all: Flow<RequestResult<List<Recipe>>> =
         defaultSignalingFlow
             .filterSignal { it is Signal.ReloadAll }
@@ -84,7 +70,7 @@ class RecipeRepositoryImpl (
             .asResultRequestFlow(
                 ioDispatcher = ioDispatcher,
                 localFetcher = { recipesDao.getById(id) },
-                localSaver = { if (it != null) recipesDao.insertRecipe(it) },
+                localSaver = { it?.also { recipesDao.insertRecipe(it) } },
                 localDataValidator = { it != null },
                 remoteFetcher = { recipesApi.fetchById(id) }
             )
