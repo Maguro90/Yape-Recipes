@@ -8,9 +8,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
@@ -20,13 +23,18 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.maguro.recipes.data.model.Coordinates
 import com.maguro.recipes.data.model.Country
 import com.maguro.recipes.data.model.Recipe
+import com.maguro.recipes.data.repository.ErrorType
 import com.maguro.recipes.data.repository.RequestResult
 import com.maguro.recipes.presentation.base.TopBarConfig
 import com.maguro.recipes.presentation.base.TopBarIconButton
 import com.maguro.recipes.presentation.base.TopBarTitle
 import com.maguro.recipes.presentation.base.TopBarType
 import com.maguro.recipes.presentation.base.UpdateScaffold
+import com.maguro.recipes.presentation.screens.utils.EmptyContent
+import com.maguro.recipes.presentation.screens.utils.ErrorContent
+import com.maguro.recipes.presentation.screens.utils.ErrorSnackbar
 import com.maguro.recipes.presentation.screens.utils.PullToRefreshBox
+import kotlinx.coroutines.CoroutineScope
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.BoundingBox
@@ -39,6 +47,8 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MapScreen(
+    coroutineScope: CoroutineScope,
+    snackbarHostState: SnackbarHostState,
     onBackClick: () -> Unit,
     viewModel: MapViewModel = hiltViewModel()
 ) {
@@ -54,22 +64,54 @@ fun MapScreen(
 
         when (val result = state.value) {
             is RequestResult.FirstLoad -> {
-                Loading(onBackClick = onBackClick)
+                Loading(onBackClick)
             }
-            is RequestResult.Refresh -> {
-                //Show nothing
-            }
-            is RequestResult.Success -> {
-                pullToRefreshState.endRefresh()
-                when (val recipe = result.data) {
-                    null -> {}
-                    else -> MapContent(
-                        recipe = recipe,
-                        onBackClick = onBackClick
-                    )
+            is RequestResult.WithData -> {
+                val recipeState = remember {
+                    derivedStateOf {
+                        (state.value as RequestResult.WithData).data
+                    }
+                }
+
+                val recipe = recipeState.value
+
+                if (result is RequestResult.WithData.Loaded) {
+                    pullToRefreshState.endRefresh()
+                }
+
+                when {
+                    recipe != null -> {
+                        MapContent(
+                            recipe = recipe,
+                            onBackClick = onBackClick
+                        )
+                        ErrorSnackbar(
+                            coroutineScope = coroutineScope,
+                            snackbarHostState = snackbarHostState,
+                            error = result.consumeError())
+                    }
+                    result is RequestResult.WithData.Refresh -> {
+                        // Show nothing
+                    }
+                    result.consumeError() is ErrorType.None -> {
+                        EmptyContent (
+                            modifier = Modifier.fillMaxSize(),
+                            onRetryClick = {
+                                pullToRefreshState.startRefresh()
+                            }
+                        )
+                    }
+                    else -> {
+                        ErrorContent(
+                            modifier = Modifier.fillMaxSize(),
+                            errorType = result.error,
+                            onRetryClick = {
+                                pullToRefreshState.startRefresh()
+                            }
+                        )
+                    }
                 }
             }
-            is RequestResult.Error -> {}
         }
     }
 

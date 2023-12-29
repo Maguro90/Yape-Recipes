@@ -19,10 +19,13 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,6 +38,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.maguro.recipes.R
 import com.maguro.recipes.data.model.Recipe
+import com.maguro.recipes.data.repository.ErrorType
 import com.maguro.recipes.data.repository.RequestResult
 import com.maguro.recipes.presentation.base.TopBarActions
 import com.maguro.recipes.presentation.base.TopBarConfig
@@ -42,12 +46,18 @@ import com.maguro.recipes.presentation.base.TopBarIconButton
 import com.maguro.recipes.presentation.base.TopBarTitle
 import com.maguro.recipes.presentation.base.TopBarType
 import com.maguro.recipes.presentation.base.UpdateScaffold
+import com.maguro.recipes.presentation.screens.utils.EmptyContent
+import com.maguro.recipes.presentation.screens.utils.ErrorContent
+import com.maguro.recipes.presentation.screens.utils.ErrorSnackbar
 import com.maguro.recipes.presentation.screens.utils.PullToRefreshBox
+import kotlinx.coroutines.CoroutineScope
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailsScreen(
+    coroutineScope: CoroutineScope,
+    snackbarHostState: SnackbarHostState,
     onLocationClick: (String) -> Unit,
     onBackClick: () -> Unit,
     viewModel: DetailsViewModel = hiltViewModel()
@@ -66,24 +76,53 @@ fun DetailsScreen(
             is RequestResult.FirstLoad -> {
                 Loading(onBackClick)
             }
-            is RequestResult.Refresh -> {
-                //Show nothing
-            }
-            is RequestResult.Success -> {
-                pullToRefreshState.endRefresh()
+            is RequestResult.WithData -> {
+                val recipeState = remember {
+                    derivedStateOf {
+                        (state.value as RequestResult.WithData).data
+                    }
+                }
 
-                when (val recipe = result.data) {
-                    null -> {}
-                    else -> {
+                val recipe = recipeState.value
+
+                if (result is RequestResult.WithData.Loaded) {
+                    pullToRefreshState.endRefresh()
+                }
+
+                when {
+                    recipe != null -> {
                         DetailsContent(
                             recipe = recipe,
                             onBackClick = onBackClick,
                             onLocationClick = onLocationClick
                         )
+                        ErrorSnackbar(
+                            coroutineScope = coroutineScope,
+                            snackbarHostState = snackbarHostState,
+                            error = result.consumeError())
+                    }
+                    result is RequestResult.WithData.Refresh -> {
+                        // Show nothing
+                    }
+                    result.consumeError() is ErrorType.None -> {
+                        EmptyContent (
+                            modifier = Modifier.fillMaxSize(),
+                            onRetryClick = {
+                                pullToRefreshState.startRefresh()
+                            }
+                        )
+                    }
+                    else -> {
+                        ErrorContent(
+                            modifier = Modifier.fillMaxSize(),
+                            errorType = result.error,
+                            onRetryClick = {
+                                pullToRefreshState.startRefresh()
+                            }
+                        )
                     }
                 }
             }
-            is RequestResult.Error -> {}
         }
     }
 }

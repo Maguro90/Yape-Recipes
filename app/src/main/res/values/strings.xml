@@ -8,4 +8,11 @@
     <string name="detailsScreen_ingredients">Ingredients</string>
     <string name="detailsScreen_cookingSteps">Cooking steps</string>
 
+    <string name="message_notice_noInfoFound">No information found.</string>
+    <string name="message_error_connection">Seems that you are not connected to the internet. Verify your connection and try again.</string>
+    <string name="message_error_connectionTimeout">Server response timeout. Please try again later.</string>
+    <string name="message_error_server">Server error occurred. Please try again later. If the problem persists contact technical support.</string>
+    <string name="message_error_unknown">An error occurred. Contact technical support.</string>
+
+    <string name="button_text_retry">Retry</string>
 </resources>

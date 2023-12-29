@@ -8,4 +8,11 @@
     <string name="detailsScreen_ingredients">Ingredientes</string>
     <string name="detailsScreen_cookingSteps">Pasos de preparación</string>
 
+    <string name="message_notice_noInfoFound">No se encontró información.</string>
+    <string name="message_error_connection">Al parecer no cuentas con conexión a internet. Verifica tu conexión y vuelve a intentarlo.</string>
+    <string name="message_error_connectionTimeout">Caducó el tiempo de espera del servidor. Inténtalo más tarde.</string>
+    <string name="message_error_server">Ha ocurrido un error en el servidor. Inténtalo de nuevo más tarde. Si el problema persiste, contacta al personal técnico.</string>
+    <string name="message_error_unknown">Ha ocurrido un error. Contacta al personal técnico.</string>
+
+    <string name="button_text_retry">Reintentar</string>
 </resources>

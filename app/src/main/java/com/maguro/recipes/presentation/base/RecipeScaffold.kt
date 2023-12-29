@@ -5,10 +5,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -31,6 +35,8 @@ fun UpdateScaffold(tag: Any, block: ScaffoldConfig.() -> Unit) {
 @Composable
 fun RecipeScaffold() {
 
+    val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
     val scrollBehavior = scaffoldConfig.topBar?.scrollBehavior?.invoke()
 
     Scaffold(
@@ -44,6 +50,9 @@ fun RecipeScaffold() {
                }
             }
         ,
+        snackbarHost = {
+            SnackbarHost(snackbarHostState)
+        },
         topBar = {
             RecipeTopAppBar(
                 topBarConfig = scaffoldConfig.topBar,
@@ -54,7 +63,10 @@ fun RecipeScaffold() {
             Box(
                 modifier = Modifier.padding(paddingValues)
             ) {
-                RecipeNavigation()
+                RecipeNavigation(
+                    coroutineScope = coroutineScope,
+                    snackbarHostState = snackbarHostState,
+                )
             }
         }
     )

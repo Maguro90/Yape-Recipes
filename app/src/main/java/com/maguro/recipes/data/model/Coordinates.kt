@@ -1,6 +1,6 @@
 package com.maguro.recipes.data.model
 
-data class Coordinates(
+data class Coordinates (
     val latitude: Double,
     val longitude: Double
 )

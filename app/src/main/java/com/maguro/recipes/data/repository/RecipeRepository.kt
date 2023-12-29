@@ -1,6 +1,7 @@
 package com.maguro.recipes.data.repository
 
 import android.util.Log
+import com.maguro.recipes.data.local.dao.RecipesDao
 import com.maguro.recipes.data.model.Recipe
 import com.maguro.recipes.data.remote.RecipesApi
 import kotlinx.coroutines.Dispatchers
@@ -28,14 +29,17 @@ interface RecipeRepository {
 @Singleton
 class RecipeRepositoryImpl (
     private val recipesApi: RecipesApi,
+    private val recipesDao: RecipesDao,
     private val ioDispatcher: CoroutineContext
 ) : RecipeRepository {
 
     @Inject
     constructor(
         recipesApi: RecipesApi,
+        recipesDao: RecipesDao
     ): this(
         recipesApi = recipesApi,
+        recipesDao = recipesDao,
         ioDispatcher = Dispatchers.IO
     )
 
@@ -60,25 +64,31 @@ class RecipeRepositoryImpl (
     }
 
 
+
     override val all: Flow<RequestResult<List<Recipe>>> =
         defaultSignalingFlow
-            .onEach {
-                Log.e("Hola", "Hola $it")
-            }
             .filterSignal { it is Signal.ReloadAll }
-            .asRequestResultFlow(ioDispatcher) {
-                recipesApi.fetchAll()
-            }
+            .asResultRequestFlow(
+                ioDispatcher = ioDispatcher,
+                localFetcher = { recipesDao.getAll() },
+                localSaver = { recipesDao.insertRecipes(it) },
+                localDataValidator = { it.isNotEmpty() },
+                remoteFetcher = { recipesApi.fetchAll() }
+            )
 
     override fun getById(id: String): Flow<RequestResult<Recipe?>> =
         defaultSignalingFlow
             .filterSignal {
-                Log.e("Signal", it.toString())
                 it is Signal.ReloadWithId && it.id == id
             }
-            .asRequestResultFlow(ioDispatcher) {
-                recipesApi.fetchById(id)
-            }
+            .asResultRequestFlow(
+                ioDispatcher = ioDispatcher,
+                localFetcher = { recipesDao.getById(id) },
+                localSaver = { if (it != null) recipesDao.insertRecipe(it) },
+                localDataValidator = { it != null },
+                remoteFetcher = { recipesApi.fetchById(id) }
+            )
+
 
     override fun reload() {
         signalingFlow.tryEmit(Signal.ReloadAll)
